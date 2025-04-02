@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"one_time_secret/internal/model/view/controller"
+	"one_time_secret/internal/controller"
 
 	"github.com/gin-gonic/gin"
 )
