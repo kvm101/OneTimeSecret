@@ -9,6 +9,8 @@ import (
 func SetupRouter() *gin.Engine {
 	route := gin.Default()
 
+	route.GET("/home", controller.GetHome)
+
 	route.GET("/message/:id", controller.GetMessage)
 	route.POST("/message", controller.PostMessage)
 	route.PATCH("/message/:id", controller.PatchMessage)
