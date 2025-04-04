@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"encoding/base64"
 	"html/template"
 	"log"
 	"net/http"
@@ -22,12 +21,7 @@ func GetHome(c *gin.Context) {
 
 func GetMessage(c *gin.Context) {
 	var message model.Message
-	base64_str := c.Param("id")
-	str, err := base64.StdEncoding.DecodeString(base64_str)
-	if err != nil {
-		log.Println(err)
-	}
-
+	str := c.Param("id")
 	id, err := uuid.Parse(string(str))
 	if err != nil {
 		log.Println(err)
@@ -71,7 +65,7 @@ func GetMessage(c *gin.Context) {
 	}
 }
 
-func PostMessage(c *gin.Context) {
+func bindModelMessage(c *gin.Context) model.Message {
 	var message model.Message
 
 	err := c.BindJSON(&message)
@@ -79,32 +73,47 @@ func PostMessage(c *gin.Context) {
 		log.Println(err)
 	}
 
-	config.DB.Create(&message)
-	if err != nil {
-		log.Println(err)
+	return message
+}
+
+func PostMessage(c *gin.Context) {
+	message := bindModelMessage(c)
+	if message.Text != nil {
+		config.DB.Create(&message)
+		return
 	}
+
+	c.Status(http.StatusNoContent)
+	return
 }
 
 func PatchMessage(c *gin.Context) {
-
+	message := bindModelMessage(c)
+	config.DB.Save(&message)
 }
 
 func DeleteMessage(c *gin.Context) {
+	str := c.Param("id")
+	id, err := uuid.Parse(str)
+	if err != nil {
+		log.Println(err)
+	}
 
+	config.DB.Delete(&model.Message{}, id)
 }
 
-func PostRegistration(c *gin.Context) {
+// func PostRegistration(c *gin.Context) {
 
-}
+// }
 
-func PostAccount(c *gin.Context) {
+// func PostAccount(c *gin.Context) {
 
-}
+// }
 
-func PatchAccount(c *gin.Context) {
+// func PatchAccount(c *gin.Context) {
 
-}
+// }
 
-func DeleteAccount(c *gin.Context) {
+// func DeleteAccount(c *gin.Context) {
 
-}
+// }

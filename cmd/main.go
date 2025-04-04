@@ -12,6 +12,11 @@ func main() {
 		log.Fatal(err)
 	}
 
+	config.CleanInappropriateDB()
+
 	r := routes.SetupRouter()
-	r.Run(":8999")
+	err = r.RunTLS(":443", "/etc/ssl/certs/selfsigned.crt", "/etc/ssl/private/selfsigned.key")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
