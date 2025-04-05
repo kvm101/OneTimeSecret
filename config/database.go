@@ -22,8 +22,8 @@ func ConnectDatabase() error {
 	return db.AutoMigrate(&model.User{}, &model.Message{})
 }
 
-func CleanInappropriateDB() {
-	message := model.Message{}
+// func CleanInappropriateDB() {
+// 	message := model.Message{}
 
-	DB.Where("Text IS NULL").Delete(&message)
-}
+// 	DB.Where("Text IS NULL").Delete(&message)
+// }

@@ -16,10 +16,10 @@ func SetupRouter() *gin.Engine {
 	route.PATCH("/message", controller.PatchMessage)
 	route.DELETE("/message/:id", controller.DeleteMessage)
 
-	// route.POST("/registration", controller.PostRegistration)
-	// route.POST("/account", controller.PostAccount)
-	// route.PATCH("/account", controller.PatchAccount)
-	// route.DELETE("/account", controller.DeleteAccount)
+	route.POST("/registration", controller.PostRegistration)
+	route.GET("/account", controller.GetAccount)
+	route.PATCH("/account", controller.PatchAccount)
+	route.DELETE("/account", controller.DeleteAccount)
 
 	return route
 }
