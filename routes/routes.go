@@ -9,14 +9,12 @@ import (
 func SetupRouter() *gin.Engine {
 	route := gin.Default()
 
-	route.GET("/home", controller.GetHome)
-
 	route.GET("/message/:id", controller.GetMessage)
 	route.POST("/message", controller.PostMessage)
 	route.PATCH("/message", controller.PatchMessage)
 	route.DELETE("/message/:id", controller.DeleteMessage)
 
-	route.POST("/registration", controller.PostRegistration)
+	route.POST("/account/registration", controller.PostRegistration)
 	route.GET("/account", controller.GetAccount)
 	route.PATCH("/account", controller.PatchAccount)
 	route.DELETE("/account", controller.DeleteAccount)

@@ -23,3 +23,17 @@ type Message struct {
 	UserID          *uuid.UUID `gorm:"type:uuid;index"`
 	User            *User      `gorm:"foreignKey:UserID"`
 }
+
+type AccountData struct {
+	Username *string
+	Messages *[]Message
+	IsAuth   bool
+}
+
+type MessageInfo struct {
+	ID        *uuid.UUID
+	Text      *string
+	Times     *int
+	Timestamp *time.Time
+	Username  *string
+}

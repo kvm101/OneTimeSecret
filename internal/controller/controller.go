@@ -16,15 +16,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func GetHome(c *gin.Context) {
-	tmpl := template.Must(template.ParseFiles("/home/omni/Desktop/Projects/OneTimeSecret/internal/view/index.html"))
-	if err := tmpl.Execute(c.Writer, nil); err != nil {
-		log.Println(err)
-		return
-	}
-
-}
-
 func extractBasic(c *gin.Context) []string {
 	b64_auth, _ := strings.CutPrefix(c.Request.Header.Get("Authorization"), "Basic ")
 
@@ -67,12 +58,15 @@ func GetMessage(c *gin.Context) {
 	if message.ID != nil {
 		tmpl := template.Must(template.ParseFiles("/home/omni/Desktop/Projects/OneTimeSecret/internal/view/messages.html"))
 
-		data := map[string]any{
-			"ID":        message.ID,
-			"Text":      message.Text,
-			"Times":     message.Times,
-			"Timestamp": message.Timestamp,
-			"UserID":    message.UserID,
+		var user model.User
+		config.DB.Find(&user, "id = ?", message.UserID)
+
+		data := model.MessageInfo{
+			ID:        message.ID,
+			Text:      message.Text,
+			Times:     message.Times,
+			Timestamp: message.Timestamp,
+			Username:  user.Username,
 		}
 
 		if err := tmpl.Execute(c.Writer, data); err != nil {
@@ -123,6 +117,7 @@ func PostMessage(c *gin.Context) {
 
 func PatchMessage(c *gin.Context) {
 	message := bindModelMessage(c)
+
 	config.DB.Save(&message)
 }
 
@@ -154,14 +149,46 @@ func GetAccount(c *gin.Context) {
 	config.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
 	config.DB.Find(&messages, "user_id = ?", user.ID)
 
-	c.JSON(http.StatusOK, messages)
+	log.Println(user)
+
+	tmpl := template.Must(template.ParseFiles("/home/omni/Desktop/Projects/OneTimeSecret/internal/view/account.html"))
+
+	isAuth := false
+	if user.Username != nil {
+		isAuth = true
+	}
+
+	data := model.AccountData{
+		Username: user.Username,
+		Messages: &messages,
+		IsAuth:   isAuth,
+	}
+
+	if err := tmpl.Execute(c.Writer, data); err != nil {
+		log.Println(err)
+		return
+	}
 }
 
 func PatchAccount(c *gin.Context) {
+	arr_data := extractBasic(c)
+	var user_changes model.User
 	var user model.User
 
-	if err := c.BindJSON(&user); err != nil {
+	if err := c.BindJSON(&user_changes); err != nil {
 		log.Println(err)
+	}
+
+	config.DB.Find(&user, "username = ? and password = ?", arr_data[0], arr_data[1])
+
+	if user_changes.Username != nil {
+		user.Username = user_changes.Username
+	}
+
+	if user_changes.Password != nil {
+		str_password := *user_changes.Password
+		sum := fmt.Sprintf("%x", sha256.Sum256([]byte(str_password)))
+		user.Password = &sum
 	}
 
 	config.DB.Save(&user)
