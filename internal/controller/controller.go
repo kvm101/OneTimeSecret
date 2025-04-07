@@ -12,23 +12,11 @@ import (
 
 	"one_time_secret/config"
 	"one_time_secret/internal/model"
+	templates "one_time_secret/internal/view"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
-
-func SystemPath(after_path string) string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		log.Fatal("Error getting current working directory:", err)
-	}
-
-	project_name := "/OneTimeSecret"
-	index := strings.Index(cwd, project_name)
-	last_index := len(project_name) + index
-
-	return cwd[:last_index] + after_path
-}
 
 func extractBasic(c *gin.Context) []string {
 	b64_auth, _ := strings.CutPrefix(c.Request.Header.Get("Authorization"), "Basic ")
@@ -107,7 +95,7 @@ func GetMessage(c *gin.Context) {
 			return
 		}
 
-		tmpl := template.Must(template.ParseFiles(SystemPath("/internal/view/messages.html")))
+		tmpl := template.Must(template.ParseFS(templates.FS, "messages.html"))
 
 		var user model.User
 		config.DB.Find(&user, "id = ?", message.UserID)
@@ -126,7 +114,7 @@ func GetMessage(c *gin.Context) {
 		}
 
 	} else {
-		tmpl := template.Must(template.ParseFiles(SystemPath("/internal/view/not_found.html")))
+		tmpl := template.Must(template.ParseFS(templates.FS, "not_found.html"))
 
 		c.Status(http.StatusNotFound)
 		if err := tmpl.Execute(c.Writer, nil); err != nil {
@@ -213,7 +201,7 @@ func GetAccount(c *gin.Context) {
 		return
 	}
 
-	tmpl := template.Must(template.ParseFiles(SystemPath("/internal/view/account.html")))
+	tmpl := template.Must(template.ParseFS(templates.FS, "account.html"))
 	if err := tmpl.Execute(c.Writer, data); err != nil {
 		log.Println(err)
 		return
