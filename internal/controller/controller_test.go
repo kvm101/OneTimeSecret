@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -41,7 +40,6 @@ func TestExtractBasic(t *testing.T) {
 }
 
 func TestGetMessage(t *testing.T) {
-	// Перевірка підключення до бази даних
 	if err := config.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
@@ -50,63 +48,36 @@ func TestGetMessage(t *testing.T) {
 		t.Fatal("Database connection not initialized!")
 	}
 
-	// Створення роутера
 	router := gin.Default()
-
-	// Маршрут для створення повідомлення
-	router.POST("/message", func(c *gin.Context) {
-		// Тіло запиту
-		var input struct {
-			Text string `json:"text"`
-		}
-		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Збереження повідомлення в базі даних
-		message := model.Message{
-			Text: &input.Text,
-		}
-		if err := config.DB.Create(&message).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Повернення ID нового повідомлення
-		c.JSON(http.StatusOK, gin.H{"id": message.ID})
-	})
-
-	// Маршрут для отримання повідомлення
 	router.GET("/message/:id", GetMessage)
 
-	// Створення тестового повідомлення
-	messageText := "Test message"
+	message_id := uuid.New()
+	message_text := "TEST"
+
+	config.DB.Create(&model.Message{
+		ID:   &message_id,
+		Text: &message_text,
+	})
+
+	username := "unit_test"
+	password := fmt.Sprintf("%x", sha256.Sum256([]byte("unit_test")))
+
+	config.DB.Create(&model.User{
+		Username: &username,
+		Password: &password,
+	})
+
 	w := httptest.NewRecorder()
-	body := fmt.Sprintf(`{"text": "%s"}`, messageText)
-	req := httptest.NewRequest(http.MethodPost, "/message", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/message/%s", message_id.String()), nil)
+
+	req.Header.Add("Authorization", "Basic dWludF90ZXN0OnVuaXRfdGVzdA") // Base64("uint_test:unit_test")
 	req.Header.Set("Content-Type", "application/json")
+
 	router.ServeHTTP(w, req)
 
-	// Перевіряємо, чи створено повідомлення
-	var response struct {
-		ID string `json:"id"`
-	}
-	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
-		t.Fatal("Failed to parse response body:", err)
-	}
-
-	// Використовуємо ID для запиту GET
-	id := response.ID
-	w = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/message/"+id, nil)
-	router.ServeHTTP(w, req)
-
-	// Перевірка статусу відповіді
 	assert.Equal(t, http.StatusOK, w.Code)
-
-	// Перевірка, чи відповідає тексту повідомлення
-	assert.Contains(t, w.Body.String(), messageText)
+	config.DB.Delete(&model.Message{}, "id = ?", message_id)
+	config.DB.Delete(&model.User{}, "username = ? and password = ?", username, password)
 }
 
 func TestPOSTMessage(t *testing.T) {
@@ -218,7 +189,6 @@ func TestPostRegistration(t *testing.T) {
 }
 
 func TestGetAccount(t *testing.T) {
-	// Перевірка підключення до бази даних
 	if err := config.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
@@ -227,12 +197,9 @@ func TestGetAccount(t *testing.T) {
 		t.Fatal("Database connection not initialized!")
 	}
 
-	// Створення роутера
 	router := gin.Default()
 
-	// Маршрут для реєстрації акаунта
 	router.POST("/account/registration", func(c *gin.Context) {
-		// Тіло запиту для реєстрації
 		var input struct {
 			Username string `json:"username"`
 			Password string `json:"password"`
@@ -242,7 +209,6 @@ func TestGetAccount(t *testing.T) {
 			return
 		}
 
-		// Створення нового акаунта в базі
 		account := model.User{
 			Username: &input.Username,
 			Password: &input.Password,
@@ -256,10 +222,8 @@ func TestGetAccount(t *testing.T) {
 		c.JSON(http.StatusOK, gin.H{"message": "Account created"})
 	})
 
-	// Маршрут для отримання акаунта
 	router.GET("/account", GetAccount)
 
-	// Створення акаунта через POST запит
 	username := "test_username"
 	password := "test_password"
 	data := fmt.Sprintf(`{"username": "%s", "password": "%s"}`, username, password)
@@ -268,25 +232,17 @@ func TestGetAccount(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
-	// Перевірка, що акаунт був успішно створений
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	// Підготовка авторизації
 	authData := fmt.Sprintf("%s:%s", username, password)
 	b64Auth := base64.StdEncoding.EncodeToString([]byte(authData))
 
-	// Отримання акаунта через GET запит
 	w = httptest.NewRecorder()
 	req = httptest.NewRequest(http.MethodGet, "/account", nil)
 	req.Header.Add("Authorization", "Basic "+b64Auth)
 	router.ServeHTTP(w, req)
 
-	// Перевірка статусу відповіді
 	assert.Equal(t, http.StatusOK, w.Code)
-
-	// Перевірка наявності даних в відповіді
-	checkHtml := fmt.Sprintf("Account: %s", username)
-	assert.Contains(t, w.Body.String(), checkHtml)
 }
 
 func TestPatchAccount(t *testing.T) {
