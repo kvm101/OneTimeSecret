@@ -7,12 +7,11 @@ tasks:
       - rm -rf ./bin/*
     silent: true
 
-  setup:
+  check:
     cmds:
       - go clean -modcache
       - go mod tidy
       - go mod verify
-      - go mod vendor
 
   build:
     cmds:
@@ -41,11 +40,10 @@ tasks:
 
   all:
     deps:
-      - setup
+      - check
       - clean
       - unit-test
       - integration-test
-      - verify
       - build
     cmds:
       - echo "All steps completed successfully."
