@@ -26,5 +26,8 @@ jobs:
         with:
           version: 3.x # Ви можете вказати бажану версію Task
 
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
       - name: Run Taskfile
         run: task all # Запускає задачу `all`, яка визначена у вашому Taskfile.yml
