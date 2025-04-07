@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"one_time_secret/config"
@@ -58,11 +59,14 @@ func GetMessage(c *gin.Context) {
 	id, err := uuid.Parse(string(str))
 	if err != nil {
 		log.Println(err)
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
+	// Знайти повідомлення за ID
 	config.DB.First(&message, id)
 
+	// Якщо повідомлення існує
 	if message.Times != nil {
 		if *message.Times > 1 {
 			*message.Times = *message.Times - 1
@@ -74,7 +78,24 @@ func GetMessage(c *gin.Context) {
 		}
 	}
 
+	// Якщо знайдено повідомлення
 	if message.ID != nil {
+		if os.Getenv("IS_TESTING") == "true" {
+			var user model.User
+			config.DB.Find(&user, "id = ?", message.UserID)
+
+			data := model.MessageInfo{
+				ID:        message.ID,
+				Text:      message.Text,
+				Times:     message.Times,
+				Timestamp: message.Timestamp,
+				Username:  user.Username,
+			}
+
+			c.JSON(http.StatusOK, data)
+			return
+		}
+
 		tmpl := template.Must(template.ParseFiles("/home/omni/Desktop/Projects/OneTimeSecret/internal/view/messages.html"))
 
 		var user model.User
@@ -156,6 +177,7 @@ func PostRegistration(c *gin.Context) {
 
 func GetAccount(c *gin.Context) {
 	arr_data := extractBasic(c)
+
 	var user model.User
 	var messages []model.Message
 
@@ -163,8 +185,6 @@ func GetAccount(c *gin.Context) {
 	config.DB.Find(&messages, "user_id = ?", user.ID)
 
 	log.Println(user)
-
-	tmpl := template.Must(template.ParseFiles("/home/omni/Desktop/Projects/OneTimeSecret/internal/view/account.html"))
 
 	isAuth := false
 	if user.Username != nil {
@@ -177,6 +197,12 @@ func GetAccount(c *gin.Context) {
 		IsAuth:   isAuth,
 	}
 
+	if os.Getenv("IS_TESTING") == "true" {
+		c.JSON(200, data)
+		return
+	}
+
+	tmpl := template.Must(template.ParseFiles("/home/omni/Desktop/Projects/OneTimeSecret/internal/view/account.html"))
 	if err := tmpl.Execute(c.Writer, data); err != nil {
 		log.Println(err)
 		return
