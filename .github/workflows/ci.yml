@@ -21,10 +21,10 @@ jobs:
         with:
           go-version: "1.18" # або інша версія Go, яку ви використовуєте
 
-      - name: Install go-task
-        run: |
-          curl -sSL https://github.com/go-task/task/releases/download/v3.9.0/task_linux_amd64.tar.gz | tar -xzv -C /usr/local/bin task
-        # Завантажуємо та розпаковуємо go-task в /usr/local/bin
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x # Ви можете вказати бажану версію Task
 
       - name: Run Taskfile
         run: task all # Запускає задачу `all`, яка визначена у вашому Taskfile.yml
