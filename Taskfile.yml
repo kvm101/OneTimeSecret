@@ -9,8 +9,8 @@ tasks:
 
   check:
     cmds:
-      - go clean -modcache
       - go mod tidy
+      - go mod download
       - go mod verify
 
   build:
