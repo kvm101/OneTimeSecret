@@ -1,0 +1,52 @@
+version: "3"
+
+tasks:
+  clean:
+    cmds:
+      - echo "* clean"
+      - rm -rf ./bin/*
+    silent: true
+
+  setup:
+    cmds:
+      - go clean -modcache
+      - go mod tidy
+      - go mod verify
+      - go mod vendor
+
+  build:
+    cmds:
+      - echo "* build"
+      - go build -o ./bin/ots_app ./cmd
+    silent: true
+
+  unit-test:
+    cmds:
+      - echo "* unit-test"
+      - go test ./...
+    silent: true
+
+  integration-test:
+    cmds:
+      - echo "* integration-test"
+      - go test -tags=integration ./...
+    silent: true
+
+  verify:
+    cmds:
+      - echo "* verify"
+      - go vet ./...
+      - golangci-lint run
+    silent: true
+
+  all:
+    deps:
+      - setup
+      - clean
+      - unit-test
+      - integration-test
+      - verify
+      - build
+    cmds:
+      - echo "All steps completed successfully."
+    silent: true

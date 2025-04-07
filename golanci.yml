@@ -1,0 +1,17 @@
+linters:
+  enable:
+    - golint
+    - govet
+    - staticcheck
+    - errcheck
+    - gocritic
+  disable:
+    - unused
+issues:
+  exclude:
+    - ".*deprecated.*"
+  max-issues: 100
+run:
+  tests: true
+  skip-dirs:
+    - vendor

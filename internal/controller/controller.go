@@ -33,6 +33,25 @@ func extractBasic(c *gin.Context) []string {
 	return arr_data
 }
 
+func bindModelMessage(c *gin.Context) model.Message {
+	arr_data := extractBasic(c)
+
+	var message model.Message
+	var user model.User
+
+	err := c.BindJSON(&message)
+	log.Println(message)
+	if err != nil {
+		log.Println(err)
+	}
+
+	config.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
+
+	message.UserID = user.ID
+
+	return message
+}
+
 func GetMessage(c *gin.Context) {
 	var message model.Message
 	str := c.Param("id")
@@ -85,25 +104,6 @@ func GetMessage(c *gin.Context) {
 	}
 }
 
-func bindModelMessage(c *gin.Context) model.Message {
-	arr_data := extractBasic(c)
-
-	var message model.Message
-	var user model.User
-
-	err := c.BindJSON(&message)
-	log.Println(message)
-	if err != nil {
-		log.Println(err)
-	}
-
-	config.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
-
-	message.UserID = user.ID
-
-	return message
-}
-
 func PostMessage(c *gin.Context) {
 	message := bindModelMessage(c)
 	if message.Text != nil {
@@ -112,11 +112,24 @@ func PostMessage(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
-	return
 }
 
 func PatchMessage(c *gin.Context) {
-	message := bindModelMessage(c)
+	str := c.Param("id")
+	id, err := uuid.Parse(str)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	var message model.Message
+
+	config.DB.Find(&message, "id = ?", id)
+	message_change := bindModelMessage(c)
+	message.Times = message_change.Times
+	message.Text = message_change.Text
+	message.ExpirationDate = message_change.ExpirationDate
+	message.MessagePassword = message_change.MessagePassword
 
 	config.DB.Save(&message)
 }
