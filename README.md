@@ -20,7 +20,4 @@ Server for One-Time Secret messages
 - `HTTP Basic Authentication`
 
 ### Needed to add:
-- Unit-tests
-- `TaskFile` build
-- Continuous Integration
-- Review code, code is so bad, and this code need to improve
+- Review code, code is so bad and this code need to improve logic and security
