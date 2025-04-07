@@ -3,14 +3,14 @@ name: CI
 on:
   push:
     branches:
-      - main # або інша ваша основна гілка
+      - main
   pull_request:
     branches:
-      - main # або інша ваша основна гілка
+      - main
 
 jobs:
   build:
-    runs-on: ubuntu-latest # або інша система, яку ви використовуєте
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
@@ -19,15 +19,15 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: "1.23.7" # або інша версія Go, яку ви використовуєте
+          go-version: "1.23.7"
 
       - name: Install Task
         uses: arduino/setup-task@v2
         with:
-          version: 3.x # Ви можете вказати бажану версію Task
+          version: 3.x
 
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Run Taskfile
-        run: task all # Запускає задачу `all`, яка визначена у вашому Taskfile.yml
+        run: task all
