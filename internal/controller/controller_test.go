@@ -218,6 +218,7 @@ func TestPostRegistration(t *testing.T) {
 }
 
 func TestGetAccount(t *testing.T) {
+	// Перевірка підключення до бази даних
 	if err := config.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
@@ -226,26 +227,66 @@ func TestGetAccount(t *testing.T) {
 		t.Fatal("Database connection not initialized!")
 	}
 
+	// Створення роутера
 	router := gin.Default()
+
+	// Маршрут для реєстрації акаунта
+	router.POST("/account/registration", func(c *gin.Context) {
+		// Тіло запиту для реєстрації
+		var input struct {
+			Username string `json:"username"`
+			Password string `json:"password"`
+		}
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Створення нового акаунта в базі
+		account := model.User{
+			Username: &input.Username,
+			Password: &input.Password,
+		}
+		if err := config.DB.Create(&account).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Повернення статусу успіху
+		c.JSON(http.StatusOK, gin.H{"message": "Account created"})
+	})
+
+	// Маршрут для отримання акаунта
 	router.GET("/account", GetAccount)
 
-	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/account", nil)
-
+	// Створення акаунта через POST запит
 	username := "test_username"
 	password := "test_password"
-
-	data := fmt.Sprintf("%s:%s", username, password)
-
-	b64_auth := base64.StdEncoding.EncodeToString([]byte(data))
-
-	req.Header.Add("Authorization", b64_auth)
+	data := fmt.Sprintf(`{"username": "%s", "password": "%s"}`, username, password)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/account/registration", strings.NewReader(data))
+	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
-	chech_html := fmt.Sprintf("Account: %s", username)
-
+	// Перевірка, що акаунт був успішно створений
 	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), chech_html)
+
+	// Підготовка авторизації
+	authData := fmt.Sprintf("%s:%s", username, password)
+	b64Auth := base64.StdEncoding.EncodeToString([]byte(authData))
+
+	// Отримання акаунта через GET запит
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/account", nil)
+	req.Header.Add("Authorization", "Basic "+b64Auth)
+	router.ServeHTTP(w, req)
+
+	// Перевірка статусу відповіді
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Перевірка наявності даних в відповіді
+	checkHtml := fmt.Sprintf("Account: %s", username)
+	assert.Contains(t, w.Body.String(), checkHtml)
 }
 
 func TestPatchAccount(t *testing.T) {
