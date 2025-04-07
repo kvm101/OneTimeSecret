@@ -12,6 +12,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: admin
+          POSTGRES_DB: postgres
+        ports:
+          - 2345:5432 # Перемапінг порту з контейнера на хост-систему
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-timeout=5s
+          --health-retries=5
+          --health-interval=10s
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -29,8 +44,17 @@ jobs:
       - name: Install golangci-lint
         run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
-      - name: Run go mod vendor
-        run: go mod vendor
+      - name: Run tests
+        run: |
+          # Set environment variables before testing
+          export DB_HOST=localhost
+          export DB_PORT=2345
+          export DB_USER=postgres
+          export DB_PASSWORD=admin
+          export DB_NAME=postgres
+
+          # Run tests
+          go test ./...
 
       - name: Run Taskfile
         run: task all
