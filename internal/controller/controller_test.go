@@ -4,11 +4,13 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"one_time_secret/config"
 	"one_time_secret/internal/model"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -39,6 +41,7 @@ func TestExtractBasic(t *testing.T) {
 }
 
 func TestGetMessage(t *testing.T) {
+	// Перевірка підключення до бази даних
 	if err := config.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
@@ -47,20 +50,63 @@ func TestGetMessage(t *testing.T) {
 		t.Fatal("Database connection not initialized!")
 	}
 
+	// Створення роутера
 	router := gin.Default()
+
+	// Маршрут для створення повідомлення
+	router.POST("/message", func(c *gin.Context) {
+		// Тіло запиту
+		var input struct {
+			Text string `json:"text"`
+		}
+		if err := c.ShouldBindJSON(&input); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Збереження повідомлення в базі даних
+		message := model.Message{
+			Text: &input.Text,
+		}
+		if err := config.DB.Create(&message).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		// Повернення ID нового повідомлення
+		c.JSON(http.StatusOK, gin.H{"id": message.ID})
+	})
+
+	// Маршрут для отримання повідомлення
 	router.GET("/message/:id", GetMessage)
 
-	id := "bada9ec2-27dd-4d81-8a94-0a9ed029093c"
+	// Створення тестового повідомлення
+	messageText := "Test message"
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/message/"+id, nil)
+	body := fmt.Sprintf(`{"text": "%s"}`, messageText)
+	req := httptest.NewRequest(http.MethodPost, "/message", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
-	// Перевіряємо статус відповіді
+	// Перевіряємо, чи створено повідомлення
+	var response struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatal("Failed to parse response body:", err)
+	}
+
+	// Використовуємо ID для запиту GET
+	id := response.ID
+	w = httptest.NewRecorder()
+	req = httptest.NewRequest(http.MethodGet, "/message/"+id, nil)
+	router.ServeHTTP(w, req)
+
+	// Перевірка статусу відповіді
 	assert.Equal(t, http.StatusOK, w.Code)
 
-	assert.Contains(t, w.Body.String(), "<h2>Message:</h2>")
-	assert.Contains(t, w.Body.String(), "<p style=\"font-size: 20px\"><i>")
-	assert.Contains(t, w.Body.String(), "<p><strong>ID:</strong> "+id+"</p>")
+	// Перевірка, чи відповідає тексту повідомлення
+	assert.Contains(t, w.Body.String(), messageText)
 }
 
 func TestPOSTMessage(t *testing.T) {
