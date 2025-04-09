@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"one_time_secret/config"
 	"one_time_secret/internal/model"
 	"strings"
 	"testing"
@@ -40,11 +39,11 @@ func TestExtractBasic(t *testing.T) {
 }
 
 func TestGetMessage(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -54,7 +53,7 @@ func TestGetMessage(t *testing.T) {
 	message_id := uuid.New()
 	message_text := "TEST"
 
-	config.DB.Create(&model.Message{
+	model.DB.Create(&model.Message{
 		ID:   &message_id,
 		Text: &message_text,
 	})
@@ -62,7 +61,7 @@ func TestGetMessage(t *testing.T) {
 	username := "unit_test"
 	password := fmt.Sprintf("%x", sha256.Sum256([]byte("unit_test")))
 
-	config.DB.Create(&model.User{
+	model.DB.Create(&model.User{
 		Username: &username,
 		Password: &password,
 	})
@@ -76,16 +75,16 @@ func TestGetMessage(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	config.DB.Delete(&model.Message{}, "id = ?", message_id)
-	config.DB.Delete(&model.User{}, "username = ? and password = ?", username, password)
+	model.DB.Delete(&model.Message{}, "id = ?", message_id)
+	model.DB.Delete(&model.User{}, "username = ? and password = ?", username, password)
 }
 
 func TestPOSTMessage(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -103,15 +102,15 @@ func TestPOSTMessage(t *testing.T) {
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	config.DB.Delete(&model.Message{}, "id = ?", testID)
+	model.DB.Delete(&model.Message{}, "id = ?", testID)
 }
 
 func TestDeteleMessage(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -126,7 +125,7 @@ func TestDeteleMessage(t *testing.T) {
 		Text: &textMessage,
 	}
 
-	config.DB.Create(&message)
+	model.DB.Create(&message)
 
 	w := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodDelete, "/message/"+testID.String(), nil)
@@ -137,11 +136,11 @@ func TestDeteleMessage(t *testing.T) {
 }
 
 func TestPatchMessage(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -161,11 +160,11 @@ func TestPatchMessage(t *testing.T) {
 }
 
 func TestPostRegistration(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -189,11 +188,11 @@ func TestPostRegistration(t *testing.T) {
 }
 
 func TestGetAccount(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -213,7 +212,7 @@ func TestGetAccount(t *testing.T) {
 			Username: &input.Username,
 			Password: &input.Password,
 		}
-		if err := config.DB.Create(&account).Error; err != nil {
+		if err := model.DB.Create(&account).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -246,11 +245,11 @@ func TestGetAccount(t *testing.T) {
 }
 
 func TestPatchAccount(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 
@@ -277,11 +276,11 @@ func TestPatchAccount(t *testing.T) {
 }
 
 func TestDeleteAccount(t *testing.T) {
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Error(err)
 	}
 
-	if config.DB == nil {
+	if model.DB == nil {
 		t.Fatal("Database connection not initialized!")
 	}
 

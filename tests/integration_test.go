@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"one_time_secret/config"
 	"one_time_secret/internal/controller"
 	"one_time_secret/internal/model"
 	"testing"
@@ -18,8 +17,7 @@ import (
 )
 
 func TestFullFlow(t *testing.T) {
-	// Підключення до бази даних
-	if err := config.ConnectDatabase(); err != nil {
+	if err := model.ConnectDatabase(); err != nil {
 		t.Fatalf("Database connection failed: %v", err)
 	}
 
@@ -38,7 +36,7 @@ func TestFullFlow(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var savedMessage model.Message
-	err := config.DB.Where("id = ?", messageID).First(&savedMessage).Error
+	err := model.DB.Where("id = ?", messageID).First(&savedMessage).Error
 	if err != nil {
 		t.Fatalf("Failed to fetch saved message: %v", err)
 	}

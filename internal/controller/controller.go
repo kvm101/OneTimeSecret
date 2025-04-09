@@ -10,7 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"one_time_secret/config"
 	"one_time_secret/internal/model"
 	templates "one_time_secret/internal/view"
 
@@ -47,7 +46,7 @@ func bindModelMessage(c *gin.Context) model.Message {
 		log.Println(err)
 	}
 
-	config.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
+	model.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
 
 	message.UserID = user.ID
 
@@ -65,40 +64,24 @@ func GetMessage(c *gin.Context) {
 	}
 
 	// Знайти повідомлення за ID
-	config.DB.First(&message, id)
+	model.DB.First(&message, id)
 
 	if message.Times != nil {
 		if *message.Times > 1 {
 			*message.Times = *message.Times - 1
-			config.DB.Save(&message)
+			model.DB.Save(&message)
 		} else {
 			*message.Times = *message.Times - 1
-			config.DB.Save(&message)
-			config.DB.Delete(&message)
+			model.DB.Save(&message)
+			model.DB.Delete(&message)
 		}
 	}
 
 	if message.ID != nil {
-		if os.Getenv("IS_TESTING") == "true" {
-			var user model.User
-			config.DB.Find(&user, "id = ?", message.UserID)
-
-			data := model.MessageInfo{
-				ID:        message.ID,
-				Text:      message.Text,
-				Times:     message.Times,
-				Timestamp: message.Timestamp,
-				Username:  user.Username,
-			}
-
-			c.JSON(http.StatusOK, data)
-			return
-		}
-
 		tmpl := template.Must(template.ParseFS(templates.FS, "messages.html"))
 
 		var user model.User
-		config.DB.Find(&user, "id = ?", message.UserID)
+		model.DB.Find(&user, "id = ?", message.UserID)
 
 		data := model.MessageInfo{
 			ID:        message.ID,
@@ -127,7 +110,7 @@ func GetMessage(c *gin.Context) {
 func PostMessage(c *gin.Context) {
 	message := bindModelMessage(c)
 	if message.Text != nil {
-		config.DB.Create(&message)
+		model.DB.Create(&message)
 		return
 	}
 
@@ -144,14 +127,14 @@ func PatchMessage(c *gin.Context) {
 
 	var message model.Message
 
-	config.DB.Find(&message, "id = ?", id)
+	model.DB.Find(&message, "id = ?", id)
 	message_change := bindModelMessage(c)
 	message.Times = message_change.Times
 	message.Text = message_change.Text
 	message.ExpirationDate = message_change.ExpirationDate
 	message.MessagePassword = message_change.MessagePassword
 
-	config.DB.Save(&message)
+	model.DB.Save(&message)
 }
 
 func DeleteMessage(c *gin.Context) {
@@ -162,13 +145,13 @@ func DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	config.DB.Delete(&model.Message{}, id)
+	model.DB.Delete(&model.Message{}, id)
 }
 
 func PostRegistration(c *gin.Context) {
 	arr_data := extractBasic(c)
 
-	config.DB.Create(&model.User{
+	model.DB.Create(&model.User{
 		Username: &arr_data[0],
 		Password: &arr_data[1],
 	})
@@ -180,8 +163,8 @@ func GetAccount(c *gin.Context) {
 	var user model.User
 	var messages []model.Message
 
-	config.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
-	config.DB.Find(&messages, "user_id = ?", user.ID)
+	model.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
+	model.DB.Find(&messages, "user_id = ?", user.ID)
 
 	log.Println(user)
 
@@ -217,7 +200,7 @@ func PatchAccount(c *gin.Context) {
 		log.Println(err)
 	}
 
-	config.DB.Find(&user, "username = ? and password = ?", arr_data[0], arr_data[1])
+	model.DB.Find(&user, "username = ? and password = ?", arr_data[0], arr_data[1])
 
 	if user_changes.Username != nil {
 		user.Username = user_changes.Username
@@ -229,7 +212,7 @@ func PatchAccount(c *gin.Context) {
 		user.Password = &sum
 	}
 
-	config.DB.Save(&user)
+	model.DB.Save(&user)
 }
 
 func DeleteAccount(c *gin.Context) {
@@ -237,7 +220,7 @@ func DeleteAccount(c *gin.Context) {
 	var messages model.Message
 	arr_data := extractBasic(c)
 
-	config.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
-	config.DB.Delete(&messages, "user_id = ?", user.ID)
-	config.DB.Delete(&user)
+	model.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
+	model.DB.Delete(&messages, "user_id = ?", user.ID)
+	model.DB.Delete(&user)
 }

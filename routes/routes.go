@@ -7,6 +7,7 @@ import (
 )
 
 func SetupRouter() *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
 	route := gin.Default()
 
 	route.GET("/message/:id", controller.GetMessage)

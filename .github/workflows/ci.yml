@@ -20,7 +20,7 @@ jobs:
           POSTGRES_PASSWORD: admin
           POSTGRES_DB: postgres
         ports:
-          - 2345:5432 # Перемапінг порту з контейнера на хост-систему
+          - 2345:5432
         options: >-
           --health-cmd="pg_isready -U postgres"
           --health-timeout=5s
@@ -31,7 +31,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Go
+      - name: Setup Go
         uses: actions/setup-go@v3
         with:
           go-version: "1.23.7"
@@ -53,18 +53,6 @@ jobs:
         run: |
           # Create the uuid-ossp extension in PostgreSQL
           docker exec -i $(docker ps -q -f "ancestor=postgres:latest") psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
-
-      - name: Run tests
-        run: |
-          # Set environment variables before testing
-          export DB_HOST=localhost
-          export DB_PORT=2345
-          export DB_USER=postgres
-          export DB_PASSWORD=admin
-          export DB_NAME=postgres
-
-          # Run tests
-          go test ./...
 
       - name: Run Taskfile
         run: task all

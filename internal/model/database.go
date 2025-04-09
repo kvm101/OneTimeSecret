@@ -1,8 +1,7 @@
-package config
+package model
 
 import (
 	"log"
-	"one_time_secret/internal/model"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -19,5 +18,5 @@ func ConnectDatabase() error {
 
 	DB = db
 
-	return db.AutoMigrate(&model.User{}, &model.Message{})
+	return db.AutoMigrate(&User{}, &Message{})
 }
