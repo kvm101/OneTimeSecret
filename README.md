@@ -22,4 +22,3 @@ Server for One-Time Secret messages
 ### Needed to add:
 - Add Message Password
 - Add ExpirationDate
-- Review code, code is so bad and this code need to improve logic and security
