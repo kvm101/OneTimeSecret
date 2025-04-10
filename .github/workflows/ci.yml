@@ -49,5 +49,10 @@ jobs:
           # Wait for PostgreSQL service to be ready
           sleep 10
 
+      - name: Install uuid-ossp extension in PostgreSQL
+        run: |
+          # Create the uuid-ossp extension in PostgreSQL
+          docker exec -i $(docker ps -q -f "ancestor=postgres:latest") psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+
       - name: Run Taskfile
         run: task all
