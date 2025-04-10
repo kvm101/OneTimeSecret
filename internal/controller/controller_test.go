@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"one_time_secret/internal/model"
-	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -32,7 +31,7 @@ func TestExtractBasic(t *testing.T) {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
 
-	result := extractBasic(c)
+	result := ExtractBasic(c)
 
 	assert.Equal(t, username, result[0])
 	assert.Equal(t, expectedHash, result[1])
@@ -198,47 +197,18 @@ func TestGetAccount(t *testing.T) {
 
 	router := gin.Default()
 
-	router.POST("/account/registration", func(c *gin.Context) {
-		var input struct {
-			Username string `json:"username"`
-			Password string `json:"password"`
-		}
-		if err := c.ShouldBindJSON(&input); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-
-		account := model.User{
-			Username: &input.Username,
-			Password: &input.Password,
-		}
-		if err := model.DB.Create(&account).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
-
-		// Повернення статусу успіху
-		c.JSON(http.StatusOK, gin.H{"message": "Account created"})
-	})
-
 	router.GET("/account", GetAccount)
 
 	username := "test_username"
 	password := "test_password"
-	data := fmt.Sprintf(`{"username": "%s", "password": "%s"}`, username, password)
 	w := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/account/registration", strings.NewReader(data))
-	req.Header.Set("Content-Type", "application/json")
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-
 	authData := fmt.Sprintf("%s:%s", username, password)
 	b64Auth := base64.StdEncoding.EncodeToString([]byte(authData))
 
 	w = httptest.NewRecorder()
-	req = httptest.NewRequest(http.MethodGet, "/account", nil)
+	req := httptest.NewRequest(http.MethodGet, "/account", nil)
 	req.Header.Add("Authorization", "Basic "+b64Auth)
+	req.Header.Set("Content-Type", "application/json")
 	router.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)

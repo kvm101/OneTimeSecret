@@ -7,17 +7,16 @@ import (
 	"html/template"
 	"log"
 	"net/http"
-	"os"
 	"strings"
 
 	"one_time_secret/internal/model"
-	templates "one_time_secret/internal/view"
+	"one_time_secret/internal/view"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-func extractBasic(c *gin.Context) []string {
+func ExtractBasic(c *gin.Context) []string {
 	b64_auth, _ := strings.CutPrefix(c.Request.Header.Get("Authorization"), "Basic ")
 
 	auth, err := base64.StdEncoding.DecodeString(b64_auth)
@@ -34,8 +33,16 @@ func extractBasic(c *gin.Context) []string {
 	return arr_data
 }
 
+func RenderHTML(c *gin.Context, path string, data any) {
+	tmpl := template.Must(template.ParseFS(view.TmplFS, path))
+	if err := tmpl.Execute(c.Writer, data); err != nil {
+		log.Println(err)
+		return
+	}
+}
+
 func bindModelMessage(c *gin.Context) model.Message {
-	arr_data := extractBasic(c)
+	arr_data := ExtractBasic(c)
 
 	var message model.Message
 	var user model.User
@@ -56,14 +63,15 @@ func bindModelMessage(c *gin.Context) model.Message {
 func GetMessage(c *gin.Context) {
 	var message model.Message
 	str := c.Param("id")
-	id, err := uuid.Parse(string(str))
+
+	id, err := uuid.Parse(str)
 	if err != nil {
 		log.Println(err)
-		c.Status(http.StatusBadRequest)
+		c.Status(http.StatusNotFound)
+		RenderHTML(c, "templates/page_not_found.html", nil)
 		return
 	}
 
-	// Знайти повідомлення за ID
 	model.DB.First(&message, id)
 
 	if message.Times != nil {
@@ -78,8 +86,6 @@ func GetMessage(c *gin.Context) {
 	}
 
 	if message.ID != nil {
-		tmpl := template.Must(template.ParseFS(templates.FS, "messages.html"))
-
 		var user model.User
 		model.DB.Find(&user, "id = ?", message.UserID)
 
@@ -91,26 +97,21 @@ func GetMessage(c *gin.Context) {
 			Username:  user.Username,
 		}
 
-		if err := tmpl.Execute(c.Writer, data); err != nil {
-			log.Println(err)
-			return
-		}
+		RenderHTML(c, "templates/messages.html", data)
 
 	} else {
-		tmpl := template.Must(template.ParseFS(templates.FS, "not_found.html"))
-
+		RenderHTML(c, "templates/messages.html", nil)
 		c.Status(http.StatusNotFound)
-		if err := tmpl.Execute(c.Writer, nil); err != nil {
-			log.Println(err)
-			return
-		}
+		return
 	}
 }
 
 func PostMessage(c *gin.Context) {
 	message := bindModelMessage(c)
 	if message.Text != nil {
-		model.DB.Create(&message)
+		if message.UserID != nil {
+			model.DB.Create(&message)
+		}
 		return
 	}
 
@@ -149,7 +150,7 @@ func DeleteMessage(c *gin.Context) {
 }
 
 func PostRegistration(c *gin.Context) {
-	arr_data := extractBasic(c)
+	arr_data := ExtractBasic(c)
 
 	model.DB.Create(&model.User{
 		Username: &arr_data[0],
@@ -158,7 +159,7 @@ func PostRegistration(c *gin.Context) {
 }
 
 func GetAccount(c *gin.Context) {
-	arr_data := extractBasic(c)
+	arr_data := ExtractBasic(c)
 
 	var user model.User
 	var messages []model.Message
@@ -179,20 +180,11 @@ func GetAccount(c *gin.Context) {
 		IsAuth:   isAuth,
 	}
 
-	if os.Getenv("IS_TESTING") == "true" {
-		c.JSON(200, data)
-		return
-	}
-
-	tmpl := template.Must(template.ParseFS(templates.FS, "account.html"))
-	if err := tmpl.Execute(c.Writer, data); err != nil {
-		log.Println(err)
-		return
-	}
+	RenderHTML(c, "templates/account.html", data)
 }
 
 func PatchAccount(c *gin.Context) {
-	arr_data := extractBasic(c)
+	arr_data := ExtractBasic(c)
 	var user_changes model.User
 	var user model.User
 
@@ -218,7 +210,7 @@ func PatchAccount(c *gin.Context) {
 func DeleteAccount(c *gin.Context) {
 	var user model.User
 	var messages model.Message
-	arr_data := extractBasic(c)
+	arr_data := ExtractBasic(c)
 
 	model.DB.Find(&user, "username = ? AND password = ?", arr_data[0], arr_data[1])
 	model.DB.Delete(&messages, "user_id = ?", user.ID)

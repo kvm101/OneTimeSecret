@@ -1,6 +1,6 @@
-package templates
+package view
 
 import "embed"
 
-//go:embed *.html
-var FS embed.FS
+//go:embed templates/*
+var TmplFS embed.FS
