@@ -35,7 +35,7 @@ func AuthMiddleware() gin.HandlerFunc {
 }
 
 func SetupRouter() *gin.Engine {
-	// gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 	route := gin.Default()
 	route.Use(AuthMiddleware())
 
