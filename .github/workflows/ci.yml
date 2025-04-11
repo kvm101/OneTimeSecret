@@ -47,12 +47,20 @@ jobs:
       - name: Wait for PostgreSQL to be ready
         run: |
           # Wait for PostgreSQL service to be ready
-          sleep 10
+          until pg_isready -h localhost -p 2345 -U postgres; do
+            echo "Waiting for PostgreSQL to be ready..."
+            sleep 2
+          done
 
       - name: Install uuid-ossp extension in PostgreSQL
         run: |
           # Create the uuid-ossp extension in PostgreSQL
           docker exec -i $(docker ps -q -f "ancestor=postgres:latest") psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
-      - name: Run Taskfile
-        run: task all
+      - name: Run Database Migrations
+        run: |
+          # Виконання міграцій для бази даних
+          migrate -path ./migrations -database "postgres://postgres:admin@localhost:2345/postgres?sslmode=disable" up
+
+      - name: Run Taskfile (Tests)
+        run: task all # Тут має бути ваш крок для запуску тестів
