@@ -54,8 +54,9 @@ jobs:
 
       - name: Install uuid-ossp extension in PostgreSQL
         run: |
-          # Create the uuid-ossp extension in PostgreSQL
-          docker exec -i $(docker ps -q -f "ancestor=postgres:latest") psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          PGPASSWORD=admin psql -h localhost -p 2345 -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
       - name: Run Taskfile (Tests)
         run: task all # Тут має бути ваш крок для запуску тестів

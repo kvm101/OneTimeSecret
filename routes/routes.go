@@ -13,6 +13,7 @@ import (
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		basic := c.GetHeader("Authorization")
+		model.ConnectDatabase()
 
 		if basic == "" {
 			c.Status(http.StatusForbidden)
@@ -21,7 +22,6 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		auth := controller.ExtractBasic(c)
-		model.ConnectDatabase()
 		var user model.User
 		err := model.DB.First(&user, "username = ? and password = ?", auth[0], auth[1]).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
