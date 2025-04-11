@@ -175,7 +175,7 @@ func GetAccount(c *gin.Context) {
 	}
 
 	data := model.AccountData{
-		Username: user.Username,
+		Username: *user.Username,
 		Messages: &messages,
 		IsAuth:   isAuth,
 	}
@@ -199,8 +199,8 @@ func PatchAccount(c *gin.Context) {
 	}
 
 	if user_changes.Password != nil {
-		str_password := *user_changes.Password
-		sum := fmt.Sprintf("%x", sha256.Sum256([]byte(str_password)))
+		str_password := user_changes.Password
+		sum := fmt.Sprintf("%x", sha256.Sum256([]byte(*str_password)))
 		user.Password = &sum
 	}
 
