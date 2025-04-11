@@ -57,10 +57,5 @@ jobs:
           # Create the uuid-ossp extension in PostgreSQL
           docker exec -i $(docker ps -q -f "ancestor=postgres:latest") psql -U postgres -d postgres -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
-      - name: Run Database Migrations
-        run: |
-          # Виконання міграцій для бази даних
-          migrate -path ./migrations -database "postgres://postgres:admin@localhost:2345/postgres?sslmode=disable" up
-
       - name: Run Taskfile (Tests)
         run: task all # Тут має бути ваш крок для запуску тестів
