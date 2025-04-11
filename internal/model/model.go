@@ -15,8 +15,8 @@ type User struct {
 
 type Message struct {
 	ID              *uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey;not null"`
-	Text            *string    `gorm:"type:text;default:'';not null"`
-	Timestamp       *time.Time `gorm:"type:timestamp;default:current_timestamp;not null"`
+	Text            *string    `gorm:"type:text;default:''"`
+	Timestamp       *time.Time `gorm:"type:timestamp;default:current_timestamp"`
 	ExpirationDate  *time.Time `gorm:"type:timestamp;default:null"`
 	MessagePassword *string    `gorm:"type:char(64);default:''"`
 	Times           *int       `gorm:"type:integer;default:null"`
@@ -25,9 +25,9 @@ type Message struct {
 }
 
 type AccountData struct {
-	Username string
+	Username *string
 	Messages *[]Message
-	IsAuth   bool
+	IsAuth   *bool
 }
 
 type MessageInfo struct {

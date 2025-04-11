@@ -175,9 +175,9 @@ func GetAccount(c *gin.Context) {
 	}
 
 	data := model.AccountData{
-		Username: *user.Username,
+		Username: user.Username,
 		Messages: &messages,
-		IsAuth:   isAuth,
+		IsAuth:   &isAuth,
 	}
 
 	RenderHTML(c, "templates/account.html", data)
