@@ -52,4 +52,4 @@ jobs:
           done
 
       - name: Run Taskfile (Tests)
-        run: task all # Тут має бути ваш крок для запуску тестів
+        run: task all

@@ -19,13 +19,13 @@ func ConnectDatabase() error {
 
 	DB = db
 
-	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
-		return err
-	}
-
 	err = db.AutoMigrate(&User{}, &Message{})
 	if err != nil {
 		log.Println("AutoMigrate failed:", err)
+		return err
+	}
+
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
 		return err
 	}
 
