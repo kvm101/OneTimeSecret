@@ -10,33 +10,25 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() error {
-	dns := "host=localhost user=postgres password=admin dbname=postgres port=2345 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dns), &gorm.Config{})
+	dsn := "host=localhost user=postgres password=admin dbname=postgres port=2345 sslmode=disable"
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Println(err)
-		return err // Повертаємо помилку, якщо не вдалося підключитися до БД
+		log.Println("Failed to connect to database:", err)
+		return err
 	}
 
 	DB = db
 
-	// Міграція для таблиці User
-	if !db.Migrator().HasTable(&User{}) {
-		err = db.AutoMigrate(&User{})
-		if err != nil {
-			log.Fatal("Failed to migrate User:", err)
-			return err // Повертаємо помилку, якщо міграція не вдалася
-		}
+	err = db.AutoMigrate(&User{}, &Message{})
+	if err != nil {
+		log.Println("AutoMigrate failed:", err)
+		return err
 	}
 
-	// Міграція для таблиці Message
-	if !db.Migrator().HasTable(&Message{}) {
-		err = db.AutoMigrate(&Message{})
-		if err != nil {
-			log.Fatal("Failed to migrate Message:", err)
-			return err // Повертаємо помилку, якщо міграція не вдалася
-		}
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`).Error; err != nil {
+		return err
 	}
 
-	// Якщо все успішно
+	log.Println("Database connected and migrated successfully.")
 	return nil
 }
