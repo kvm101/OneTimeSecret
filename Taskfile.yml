@@ -22,7 +22,7 @@ tasks:
   unit-test:
     cmds:
       - echo "* unit-test"
-      - go test ./...
+      - go test -tags=unit ./...
     silent: true
 
   integration-test:
