@@ -1,7 +1,10 @@
 package model
 
 import (
+	"fmt"
+	"github.com/joho/godotenv"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -10,12 +13,27 @@ import (
 var DB *gorm.DB
 
 func ConnectDatabase() error {
-	dsn := "host=localhost user=postgres password=admin dbname=postgres port=2345 sslmode=disable"
+	err := godotenv.Load("../.env")
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	dsn := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%s/%s",
+		os.Getenv("PGUSER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("PGHOST"),
+		os.Getenv("PGPORT"),
+		os.Getenv("PGDATABASE"),
+	)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Println("Failed to connect to database:", err)
 		return err
 	}
+
+	db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`)
 
 	DB = db
 

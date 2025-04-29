@@ -13,7 +13,7 @@ func main() {
 	}
 
 	r := routes.SetupRouter()
-	err = r.RunTLS(":443", "/etc/ssl/certs/selfsigned.crt", "/etc/ssl/private/selfsigned.key")
+	err = r.Run(":8080")
 	if err != nil {
 		log.Fatal(err)
 	}
